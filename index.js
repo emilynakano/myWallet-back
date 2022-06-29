@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import bcrypt from 'bcrypt'
 import joi from 'joi'
+import { v4 as uuid } from 'uuid';
 
 dotenv.config()
 
@@ -12,7 +13,7 @@ const client = new MongoClient(process.env.MONGO_URI)
 let db;
 
 client.connect().then(() => {
-    db = client.db("myWallet")
+    db = client.db(process.env.MONGO_DATABASE)
 })
 
 const server = express();
@@ -22,7 +23,7 @@ server.use(json())
 server.use(cors())
 
 server.post('/sign-up', async(req, res) => {
-    const {name, email, password, chechPassword} = req.body;
+    const { name, email, password } = req.body;
 
     const userSchema = joi.object ({
         name: joi.string().required(),
@@ -45,4 +46,22 @@ server.post('/sign-up', async(req, res) => {
     
 })
 
-server.listen(5000)
+server.post("/sign-in", async (req, res) => {
+    const { email, password } = req.body;
+    
+    const user = await db.collection('users').findOne({ email });
+    console.log(user)
+    if(user && bcrypt.compareSync(password, user.password)) {
+        const token = uuid();
+		await db.collection("sessions").insertOne({
+			userId: user._id,
+            token
+		})
+        res.send(token);
+    } else {
+        res.sendStatus(401)
+    }
+    
+});
+
+server.listen(process.env.PORT)
