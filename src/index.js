@@ -2,7 +2,8 @@ import express, {json} from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 
-import {signUp, signIn} from './controllers/userController.js'
+import authRouter from './routes/authRouter.js'
+import postRouter from './routes/postRouter.js'
 
 dotenv.config()
 
@@ -11,9 +12,7 @@ server.use(json())
 
 server.use(cors())
 
-server.post('/sign-up', signUp)
-
-server.post("/sign-in", signIn);
-
+server.use(authRouter)
+server.use(postRouter)
 
 server.listen(process.env.PORT)
